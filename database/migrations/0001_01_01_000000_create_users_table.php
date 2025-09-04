@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('role', ['user', 'admin'])->default('user');
             $table->date('tgl_lahir');
             $table->string('alamat');
-            $table->integer('no_hp');
+            $table->numeric('no_hp', 15, 0);
             $table->string('foto_ktp');
             $table->rememberToken();
             $table->timestamps();

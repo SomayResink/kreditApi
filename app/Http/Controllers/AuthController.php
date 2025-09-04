@@ -12,23 +12,31 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-            'tgl_lahir' => ['required', 'date']
+            'name'       => ['required', 'string', 'max:255'],
+            'email'      => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password'   => ['required', 'string', 'min:8'],
+            'tgl_lahir'  => ['required', 'date'],
+            'alamat'     => ['required', 'string'],
+            'no_hp'      => ['required', 'numeric'],
+            'foto_ktp'   => ['required', 'string'], // kalau nanti upload file bisa diubah jadi file upload
+            'role'       => ['in:user,admin'], // default user, admin hanya bisa lewat seeder
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'tgl_lahir' => $validated['tgl_lahir'], // Menyimpan tanggal lahir
+            'name'       => $validated['name'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($validated['password']),
+            'tgl_lahir'  => $validated['tgl_lahir'],
+            'alamat'     => $validated['alamat'],
+            'no_hp'      => $validated['no_hp'],
+            'foto_ktp'   => $validated['foto_ktp'],
+            'role'       => $validated['role'] ?? 'user', // default user
         ]);
 
-        $token = $user->createToken('api')->plainTextToken; // add abilities if needed: createToken('api', ['read','write'])
+        $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user'  => $user,
             'token' => $token,
         ], 201);
     }
@@ -36,7 +44,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
@@ -48,13 +56,13 @@ class AuthController extends Controller
             ]);
         }
 
-        // Optional: revoke old tokens to keep only one active
+        // Optional: revoke old tokens
         // $user->tokens()->delete();
 
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user'  => $user,
             'token' => $token,
         ]);
     }
@@ -66,19 +74,14 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        // Revoke only the current token
         $request->user()->currentAccessToken()->delete();
-
-        // Or revoke ALL tokens for the user
-        // $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Logged out']);
     }
 
-    // Menambahkan metode untuk mendapatkan semua pengguna
     public function index()
     {
-        $users = User::all(); // Mengambil semua pengguna
+        $users = User::all();
         return response()->json($users);
     }
 }
