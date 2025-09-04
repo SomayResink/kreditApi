@@ -12,15 +12,21 @@ class Credit extends Model
     use HasFactory;
 
     protected $fillable = [
+        'kode_kredit',
         'user_id',
         'vehicle_id',
         'jumlah_pinjaman',
         'dp',
         'tenor',
+        'bunga_persen',
+        'bunga_total',
+        'remaining_tenor',
+        'remaining_amount',
         'cicilan_per_bulan',
         'total_bayar',
         'status',
         'tanggal_pengajuan'
+
     ];
 
     protected $casts = [
@@ -30,6 +36,8 @@ class Credit extends Model
         'total_bayar'       => 'decimal:2',
         'tenor'             => 'integer',
         'tanggal_pengajuan' => 'date',
+        'remaining_tenor'   => 'integer',
+        'remaining_amount'  => 'decimal:2'
     ];
 
     // =======================
@@ -140,4 +148,19 @@ class Credit extends Model
 
         return ($this->payments()->sum('jumlah_bayar') / $this->total_bayar) * 100;
     }
+
+    public static function generateKode(): string
+{
+    $prefix = 'CRD-' . now()->format('Ym'); // contoh: CRD-202508
+    $lastCredit = self::where('kode_kredit', 'like', $prefix . '%')
+        ->orderBy('id', 'desc')
+        ->first();
+
+    $number = $lastCredit
+        ? ((int) substr($lastCredit->kode_kredit, -4)) + 1
+        : 1;
+
+    return $prefix . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+}
+
 }

@@ -15,12 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('vehicle_id')->constrained()->onDelete('cascade');
+            $table->string('kode_kredit')->unique();
             $table->decimal('cicilan', 15, 2);
             $table->decimal('dp', 15, 2);
             $table->integer('tenor');
             $table->decimal('cicilan_per_bulan', 15, 2);
             $table->decimal('total_bayar', 15, 2);
             $table->enum('status', ['pending', 'approved', 'paid'])->default('pending');
+            $table->decimal('bunga_persen', 5, 2);
             $table->date('tanggal_pengajuan');
             $table->integer('remaining_tenor')->default(0);
             $table->decimal('remaining_amount', 15, 2)->default(0);

@@ -39,10 +39,9 @@ class PaymentController extends Controller
         ], 422);
     }
 
-    // Cari kredit aktif milik user login
-    $credit = Credit::where('user_id', $request->user()->id)
-        ->whereIn('status', ['approved']) // hanya ambil kredit yg masih jalan
-        ->first();
+       $credit = Credit::where('id', $request->credit_id)
+            ->where('user_id', $request->user()->id)
+            ->first();
 
     if (!$credit) {
         return response()->json([
