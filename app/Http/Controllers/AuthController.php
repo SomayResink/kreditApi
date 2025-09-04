@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
+            'tgl_lahir' => ['required', 'date']
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'tgl_lahir' => $validated['tgl_lahir'], // Menyimpan tanggal lahir
+        ]);
+
+        $token = $user->createToken('api')->plainTextToken; // add abilities if needed: createToken('api', ['read','write'])
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ], 201);
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        // Optional: revoke old tokens to keep only one active
+        // $user->tokens()->delete();
+
+        $token = $user->createToken('api')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
+    }
+
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    public function logout(Request $request)
+    {
+        // Revoke only the current token
+        $request->user()->currentAccessToken()->delete();
+
+        // Or revoke ALL tokens for the user
+        // $request->user()->tokens()->delete();
+
+        return response()->json(['message' => 'Logged out']);
+    }
+
+    // Menambahkan metode untuk mendapatkan semua pengguna
+    public function index()
+    {
+        $users = User::all(); // Mengambil semua pengguna
+        return response()->json($users);
+    }
+}
