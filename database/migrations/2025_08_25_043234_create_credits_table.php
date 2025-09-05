@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('credits', function (Blueprint $table) {
             $table->id();
+            $table->string('kode_kredit')->unique();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('vehicle_id')->constrained()->onDelete('cascade');
-            $table->string('kode_kredit')->unique();
-            $table->decimal('cicilan', 15, 2);
+            $table->decimal('jumlah_pinjaman', 15, 2);
             $table->decimal('dp', 15, 2);
             $table->integer('tenor');
             $table->decimal('cicilan_per_bulan', 15, 2);

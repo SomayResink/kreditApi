@@ -17,9 +17,9 @@ class AuthController extends Controller
             'password'   => ['required', 'string', 'min:8'],
             'tgl_lahir'  => ['required', 'date'],
             'alamat'     => ['required', 'string'],
-            'no_hp'      => ['required', 'numeric'],
-            'foto_ktp'   => ['required', 'string'], // kalau nanti upload file bisa diubah jadi file upload
-            'role'       => ['in:user,admin'], // default user, admin hanya bisa lewat seeder
+            'no_hp'      => ['required', 'string'],
+            'foto_ktp'   => ['nullable', 'string'], // kalau nanti upload file bisa diubah jadi file upload
+
         ]);
 
         $user = User::create([
@@ -29,8 +29,7 @@ class AuthController extends Controller
             'tgl_lahir'  => $validated['tgl_lahir'],
             'alamat'     => $validated['alamat'],
             'no_hp'      => $validated['no_hp'],
-            'foto_ktp'   => $validated['foto_ktp'],
-            'role'       => $validated['role'] ?? 'user', // default user
+            'foto_ktp'   => $validated['foto_ktp'] 
         ]);
 
         $token = $user->createToken('api')->plainTextToken;

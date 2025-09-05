@@ -14,11 +14,15 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@example.com'], // cek apakah sudah ada
+            ['email' => 'admin@a.com'], // cek apakah sudah ada
             [
                 'name' => 'Administrator',
                 'password' => Hash::make('password123'),
-                'role' => 'admin', // pastikan kolom role ada di tabel users
+                'role' => 'admin',
+                'tgl_lahir' => '2001-01-01',
+                'alamat' => 'Jl. Admin No. 1',
+                'no_hp' => '081219192717',
+                'foto_ktp' => null,
             ]
         );
     }
