@@ -32,7 +32,7 @@ Route::prefix('auth')->group(function () {
 
     // Payment Routes
     Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show', 'update']);
+    Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show', 'update', 'history']);
 });
 
 
@@ -51,6 +51,8 @@ Route::middleware('auth:sanctum')->prefix('credits')->group(function () {
     Route::post('/', [CreditController::class, 'store']);    // user login otomatis jadi pemilik
     Route::get('/{id}', [CreditController::class, 'show']);
     Route::put('/{id}', [CreditController::class, 'update']);
+    Route::get('/summary', [CreditController::class, 'summary']);
+
 });
 
 

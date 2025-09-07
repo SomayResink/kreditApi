@@ -12,9 +12,10 @@ class CreditController extends Controller
     // Ambil semua credit milik user yang login
     public function index(Request $request)
     {
-        $credits = Credit::with(['motor'])
-            ->where('user_id', $request->user()->id)
-            ->get();
+        $credits = Credit::with(['motor' => function ($q) {
+            $q->select('id', 'merk', 'model', 'tahun', 'harga', 'kelengkapan_surat', 'kilometer', 'plat_asal', 'deskripsi', 'gambar_url');
+        }])->where('user_id', $request->user()->id)->get();
+
 
         return response()->json([
             'status' => 'success',
@@ -23,70 +24,70 @@ class CreditController extends Controller
     }
 
 
-public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'vehicle_id' => 'required|exists:vehicles,id',
-        'dp' => 'required|numeric|min:0',
-        'tenor' => 'required|integer|min:1'
-    ]);
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'dp' => 'required|numeric|min:0',
+            'tenor' => 'required|integer|min:1'
+        ]);
 
-    if ($validator->fails()) {
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $vehicle = Vehicle::find($request->vehicle_id);
+        $jumlahPinjaman = $vehicle->harga;
+        $dp = $request->dp;
+        $tenor = $request->tenor;
+
+        // Tentukan bunga berdasarkan tenor
+        if ($tenor <= 6) {
+            $bungaPersen = 5;
+        } elseif ($tenor <= 12) {
+            $bungaPersen = 10;
+        } else {
+            $bungaPersen = 15;
+        }
+
+        // Hitung sisa pinjaman + bunga
+        $sisaPinjaman = $jumlahPinjaman - $dp;
+        $bunga = ($sisaPinjaman * $bungaPersen) / 100;
+        $totalBayar = $dp + $sisaPinjaman + $bunga;
+        $cicilanPerBulan = ($sisaPinjaman + $bunga) / $tenor;
+
+        $data = [
+            'kode_kredit' => Credit::generateKode(),
+            'user_id' => $request->user()->id,
+            'vehicle_id' => $request->vehicle_id,
+            'jumlah_pinjaman' => $jumlahPinjaman,
+            'dp' => $dp,
+            'tenor' => $tenor,
+            'bunga_persen' => $bungaPersen,
+            'cicilan_per_bulan' => $cicilanPerBulan,
+            'total_bayar' => $totalBayar,
+            'remaining_amount' => $sisaPinjaman + $bunga,
+            'remaining_tenor' => $tenor,
+            'tanggal_pengajuan' => now(),
+            'status' => 'pending'
+        ];
+
+        $credit = Credit::create($data);
+
+        // Kurangi stok motor
+        $vehicle->stok -= 1;
+        $vehicle->save();
+
+        $credit->load(['motor']);
+
         return response()->json([
-            'status' => 'error',
-            'errors' => $validator->errors()
-        ], 422);
+            'status' => 'success',
+            'data' => $credit
+        ], 201);
     }
-
-    $vehicle = Vehicle::find($request->vehicle_id);
-    $jumlahPinjaman = $vehicle->harga;
-    $dp = $request->dp;
-    $tenor = $request->tenor;
-
-    // Tentukan bunga berdasarkan tenor
-    if ($tenor <= 6) {
-        $bungaPersen = 5;
-    } elseif ($tenor <= 12) {
-        $bungaPersen = 10;
-    } else {
-        $bungaPersen = 15;
-    }
-
-    // Hitung sisa pinjaman + bunga
-    $sisaPinjaman = $jumlahPinjaman - $dp;
-    $bunga = ($sisaPinjaman * $bungaPersen) / 100;
-    $totalBayar = $dp + $sisaPinjaman + $bunga;
-    $cicilanPerBulan = ($sisaPinjaman + $bunga) / $tenor;
-
-    $data = [
-        'kode_kredit' => Credit::generateKode(),
-        'user_id' => $request->user()->id,
-        'vehicle_id' => $request->vehicle_id,
-        'jumlah_pinjaman' => $jumlahPinjaman,
-        'dp' => $dp,
-        'tenor' => $tenor,
-        'bunga_persen' => $bungaPersen,
-        'cicilan_per_bulan' => $cicilanPerBulan,
-        'total_bayar' => $totalBayar,
-        'remaining_amount' => $sisaPinjaman + $bunga,
-        'remaining_tenor' => $tenor,
-        'tanggal_pengajuan' => now(),
-        'status' => 'pending'
-    ];
-
-    $credit = Credit::create($data);
-
-    // Kurangi stok motor
-    $vehicle->stok -= 1;
-    $vehicle->save();
-
-    $credit->load(['motor']);
-
-    return response()->json([
-        'status' => 'success',
-        'data' => $credit
-    ], 201);
-}
 
 
     // Update credit
@@ -145,5 +146,26 @@ public function store(Request $request)
             'status' => 'success',
             'data' => $credit
         ], 200);
+    }
+
+    public function summary(Request $request)
+    {
+        // ambil semua kredit user login
+        $credits = Credit::where('user_id', $request->user()->id)
+            ->with('payments')
+            ->get();
+
+        // mapping data summary
+        $summary = $credits->map(fn($c) => [
+            'kode_kredit'    => $c->kode_kredit,
+            'total_bayar'    => $c->total_bayar,
+            'total_terbayar' => $c->payments->sum('jumlah_bayar'),
+            'sisa_bayar'     => $c->remaining_amount,
+            'tenor_total'    => $c->tenor,
+            'tenor_sisa'     => $c->remaining_tenor,
+            'status'         => $c->status,
+        ]);
+
+        return response()->json(['status' => 'success', 'data' => $summary], 200);
     }
 }

@@ -111,4 +111,26 @@ class PaymentController extends Controller
             'data' => $payment
         ], 200);
     }
+
+    public function history(Request $request, $kodeKredit)
+{
+    $credit = Credit::where('kode_kredit', $kodeKredit)
+        ->where('user_id', $request->user()->id)
+        ->with('payments')
+        ->first();
+
+    if (!$credit) {
+        return response()->json(['status' => 'error', 'message' => 'Kredit tidak ditemukan'], 404);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'data'   => [
+            'kode_kredit' => $credit->kode_kredit,
+            'vehicle_id'  => $credit->vehicle_id,
+            'payments'    => $credit->payments
+        ]
+    ], 200);
+}
+
 }
