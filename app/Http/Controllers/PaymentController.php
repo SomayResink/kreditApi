@@ -25,11 +25,12 @@ class PaymentController extends Controller
     }
 
     // Simpan payment baru
-   public function store(Request $request)
+  public function store(Request $request)
 {
     $validator = Validator::make($request->all(), [
-        'metode' => 'required|in:cash,transfer',
-        'bukti_url' => 'nullable|string'
+        'kode_kredit' => 'required|exists:credits,kode_kredit',
+        'metode'      => 'required|in:cash,transfer',
+        'bukti_url'   => 'nullable|string'
     ]);
 
     if ($validator->fails()) {
@@ -39,18 +40,19 @@ class PaymentController extends Controller
         ], 422);
     }
 
-       $credit = Credit::where('id', $request->credit_id)
-            ->where('user_id', $request->user()->id)
-            ->first();
+    // 🔍 Cari credit berdasarkan kode_kredit & user login
+    $credit = Credit::where('kode_kredit', $request->kode_kredit)
+        ->where('user_id', $request->user()->id)
+        ->first();
 
     if (!$credit) {
         return response()->json([
             'status' => 'error',
-            'message' => 'Tidak ada kredit aktif untuk user ini'
+            'message' => 'Kode kredit tidak valid untuk user ini'
         ], 404);
     }
 
-    // Tentukan tenor_ke
+    // Hitung tenor keberapa
     $tenorKe = $credit->payments()->count() + 1;
 
     // Simpan payment
@@ -63,9 +65,9 @@ class PaymentController extends Controller
         'status'        => 'paid',
     ]);
 
-    // Update kredit
+    // 🔄 Update kredit
     $totalDibayar = $credit->payments()->sum('jumlah_bayar');
-    $credit->remaining_amount = max(0, $credit->jumlah_pinjaman - $credit->dp - $totalDibayar);
+    $credit->remaining_amount = max(0, $credit->total_bayar - $totalDibayar);
     $credit->remaining_tenor  = max(0, $credit->tenor - $credit->payments()->count());
 
     if ($credit->remaining_amount <= 0 || $credit->remaining_tenor <= 0) {
@@ -76,10 +78,17 @@ class PaymentController extends Controller
 
     return response()->json([
         'status' => 'success',
-        'data'   => $payment->load('credit')
+        'data'   => [
+            'id'           => $payment->id,
+            'tanggal_bayar'=> $payment->tanggal_bayar,
+            'jumlah_bayar' => $payment->jumlah_bayar,
+            'tenor_ke'     => $payment->tenor_ke,
+            'metode'       => $payment->metode,
+            'status'       => $payment->status,
+            'kode_kredit'  => $credit->kode_kredit, // ✅ pakai kode_kredit, bukan credit_id
+        ]
     ], 201);
 }
-
 
     // Tampilkan payment tertentu milik user
     public function show(Request $request, $id)
