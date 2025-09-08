@@ -55,14 +55,28 @@ class PaymentController extends Controller
     // Hitung tenor keberapa
     $tenorKe = $credit->payments()->count() + 1;
 
+    // Hitung jatuh tempo (tanggal_pengajuan + tenorKe * 30 hari)
+    $jatuhTempo = \Carbon\Carbon::parse($credit->tanggal_pengajuan)
+        ->addDays(30 * $tenorKe);
+
+    $today = now();
+    $denda = 0;
+
+    if ($today->greaterThan($jatuhTempo)) {
+        // misal denda 2% dari cicilan per bulan
+        $denda = $credit->cicilan_per_bulan * 0.02;
+    }
+
     // Simpan payment
     $payment = $credit->payments()->create([
         'tanggal_bayar' => now(),
-        'jumlah_bayar'  => $credit->cicilan_per_bulan,
+        'jumlah_bayar'  => $credit->cicilan_per_bulan + $denda,
         'tenor_ke'      => $tenorKe,
         'metode'        => $request->metode,
         'bukti_url'     => $request->bukti_url,
         'status'        => 'paid',
+        'denda'         => $denda ?? 0,
+        'jatuh_tempo'   => $jatuhTempo->toDateString(),
     ]);
 
     // 🔄 Update kredit
@@ -86,6 +100,8 @@ class PaymentController extends Controller
             'metode'       => $payment->metode,
             'status'       => $payment->status,
             'kode_kredit'  => $credit->kode_kredit, // ✅ pakai kode_kredit, bukan credit_id
+            'denda'        => $payment->denda,
+            'jatuh_tempo'  => $jatuhTempo->toDateString(),
         ]
     ], 201);
 }

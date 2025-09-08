@@ -12,16 +12,29 @@ class CreditController extends Controller
     // Ambil semua credit milik user yang login
     public function index(Request $request)
     {
-        $credits = Credit::with(['motor' => function ($q) {
-            $q->select('id', 'merk', 'model', 'tahun', 'harga', 'kelengkapan_surat', 'kilometer', 'plat_asal', 'deskripsi', 'gambar_url');
-        }])->where('user_id', $request->user()->id)->get();
 
+    $credits = Credit::with(['motor' => function ($q) {
+        $q->select([
+            'id',
+            'merk',
+            'model',
+            'tahun',
+            'harga',
+            'kelengkapan_surat',
+            'kilometer',
+            'plat_asal',
+            'deskripsi',
+            'gambar_url'
+        ]);
+    }])
+    ->where('user_id', $request->user()->id)
+    ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $credits
-        ], 200);
-    }
+    return response()->json([
+        'status' => 'success',
+        'data' => $credits
+    ], 200);
+}
 
 
     public function store(Request $request)
@@ -33,6 +46,7 @@ class CreditController extends Controller
         ]);
 
         if ($validator->fails()) {
+
             return response()->json([
                 'status' => 'error',
                 'errors' => $validator->errors()

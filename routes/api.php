@@ -51,8 +51,6 @@ Route::middleware('auth:sanctum')->prefix('credits')->group(function () {
     Route::post('/', [CreditController::class, 'store']);    // user login otomatis jadi pemilik
     Route::get('/{id}', [CreditController::class, 'show']);
     Route::put('/{id}', [CreditController::class, 'update']);
-    Route::get('/summary', [CreditController::class, 'summary']);
-
 });
 
 
