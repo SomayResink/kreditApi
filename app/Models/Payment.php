@@ -23,7 +23,9 @@ class Payment extends Model
         'metode',
         'bukti_url',
         'tenor_ke',
-        'status'
+        'status',
+        'denda',
+        
     ];
 
     /**

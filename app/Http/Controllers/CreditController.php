@@ -13,28 +13,28 @@ class CreditController extends Controller
     public function index(Request $request)
     {
 
-    $credits = Credit::with(['motor' => function ($q) {
-        $q->select([
-            'id',
-            'merk',
-            'model',
-            'tahun',
-            'harga',
-            'kelengkapan_surat',
-            'kilometer',
-            'plat_asal',
-            'deskripsi',
-            'gambar_url'
-        ]);
-    }])
-    ->where('user_id', $request->user()->id)
-    ->get();
+        $credits = Credit::with(['motor' => function ($q) {
+            $q->select([
+                'id',
+                'merk',
+                'model',
+                'tahun',
+                'harga',
+                'kelengkapan_surat',
+                'kilometer',
+                'plat_asal',
+                'deskripsi',
+                'gambar_url'
+            ]);
+        }])
+            ->where('user_id', $request->user()->id)
+            ->get();
 
-    return response()->json([
-        'status' => 'success',
-        'data' => $credits
-    ], 200);
-}
+        return response()->json([
+            'status' => 'success',
+            'data' => $credits
+        ], 200);
+    }
 
 
     public function store(Request $request)
@@ -53,6 +53,7 @@ class CreditController extends Controller
             ], 422);
         }
 
+        $user = $request->user();
         $vehicle = Vehicle::find($request->vehicle_id);
         $jumlahPinjaman = $vehicle->harga;
         $dp = $request->dp;
@@ -67,11 +68,23 @@ class CreditController extends Controller
             $bungaPersen = 15;
         }
 
+
+
         // Hitung sisa pinjaman + bunga
         $sisaPinjaman = $jumlahPinjaman - $dp;
         $bunga = ($sisaPinjaman * $bungaPersen) / 100;
         $totalBayar = $dp + $sisaPinjaman + $bunga;
         $cicilanPerBulan = ($sisaPinjaman + $bunga) / $tenor;
+
+        $maxCicilan = $user->gaji_per_bulan * 0.4;
+        if ($cicilanPerBulan > $maxCicilan) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Anda tidak memenuhi persyaratan kredit, cicilan melebihi 30% dari gaji Anda'
+            ], 200);
+        }
+
+
 
         $data = [
             'kode_kredit' => Credit::generateKode(),
@@ -90,6 +103,7 @@ class CreditController extends Controller
         ];
 
         $credit = Credit::create($data);
+
 
         // Kurangi stok motor
         $vehicle->stok -= 1;
@@ -171,9 +185,11 @@ class CreditController extends Controller
 
         // mapping data summary
         $summary = $credits->map(fn($c) => [
+            'vehicle_id'     => $c->vehicle_id,
             'kode_kredit'    => $c->kode_kredit,
             'total_bayar'    => $c->total_bayar,
-            'total_terbayar' => $c->payments->sum('jumlah_bayar'),
+            'total_terbayar' => $c->payments->sum(fn($p) => $p->jumlah_bayar - $p->denda),
+            'total_denda'    => $c->payments->sum('denda'),
             'sisa_bayar'     => $c->remaining_amount,
             'tenor_total'    => $c->tenor,
             'tenor_sisa'     => $c->remaining_tenor,

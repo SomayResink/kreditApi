@@ -24,6 +24,7 @@ class User extends Authenticatable
         'tgl_lahir',
         'alamat',
         'no_hp',
+        'gaji_per_bulan',
         'foto_ktp',
         'role', // tambahin supaya bisa mass assign role
     ];

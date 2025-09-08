@@ -18,6 +18,7 @@ class AuthController extends Controller
             'tgl_lahir'  => ['required', 'date'],
             'alamat'     => ['required', 'string'],
             'no_hp'      => ['required', 'string'],
+            'gaji_per_bulan' => ['required', 'string'],
             'foto_ktp'   => ['nullable', 'string'], // kalau nanti upload file bisa diubah jadi file upload
 
         ]);
@@ -29,7 +30,8 @@ class AuthController extends Controller
             'tgl_lahir'  => $validated['tgl_lahir'],
             'alamat'     => $validated['alamat'],
             'no_hp'      => $validated['no_hp'],
-            'foto_ktp'   => $validated['foto_ktp'] 
+            'gaji_per_bulan' => $validated['gaji_per_bulan'],
+            'foto_ktp'   => $validated['foto_ktp']
         ]);
 
         $token = $user->createToken('api')->plainTextToken;

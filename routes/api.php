@@ -49,6 +49,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->prefix('credits')->group(function () {
     Route::get('/', [CreditController::class, 'index']);     // hanya user login yg bisa lihat
     Route::post('/', [CreditController::class, 'store']);    // user login otomatis jadi pemilik
+    Route::get('/summary', [CreditController::class, 'summary']); // riwayat kredit user login
     Route::get('/{id}', [CreditController::class, 'show']);
     Route::put('/{id}', [CreditController::class, 'update']);
 });

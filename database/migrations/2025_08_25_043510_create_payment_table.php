@@ -14,7 +14,7 @@
                 $table->date('tanggal_bayar');
                 $table->decimal('jumlah_bayar', 15, 2);
                 $table->unsignedInteger('tenor_ke');
-                $table->decimal('denda', 12, 2)->default(0);
+                $table->decimal('denda', 15, 2)->default(0);
                 $table->enum('metode', ['cash', 'transfer']);
                 $table->string('bukti_url')->nullable();
                 $table->enum('status', ['paid', 'late'])->default('paid');

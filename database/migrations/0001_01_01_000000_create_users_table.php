@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+
 return new class extends Migration
 {
     /**
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->date('tgl_lahir');
             $table->string('alamat');
             $table->string('no_hp', 15);
+            $table->string('gaji_per_bulan', 15, );
             $table->string('foto_ktp')->nullable();
             $table->rememberToken();
             $table->timestamps();
