@@ -80,7 +80,7 @@ class CreditController extends Controller
         if ($cicilanPerBulan > $maxCicilan) {
             return response()->json([
                 'status' => 'failed',
-                'message' => 'Anda tidak memenuhi persyaratan kredit, cicilan melebihi 30% dari gaji Anda'
+                'message' => 'Anda tidak memenuhi persyaratan kredit, cicilan melebihi 40% dari gaji Anda'
             ], 200);
         }
 
@@ -193,7 +193,6 @@ class CreditController extends Controller
             'sisa_bayar'     => $c->remaining_amount,
             'tenor_total'    => $c->tenor,
             'tenor_sisa'     => $c->remaining_tenor,
-            'status'         => $c->status,
         ]);
 
         return response()->json(['status' => 'success', 'data' => $summary], 200);
